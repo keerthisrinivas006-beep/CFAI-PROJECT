@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>CineGuard AI — Cinema Hall Emergency Evacuation System</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{--bg:#080B14;--bg2:#0D1120;--bg3:#111827;--red:#DC2626;--red2:#EF4444;--red3:rgba(220,38,38,.15);--cyan:#00D4FF;--cyan2:#22D3EE;--cyan3:rgba(0,212,255,.12);--amber:#F59E0B;--amber2:#FCD34D;--amber3:rgba(245,158,11,.15);--green:#10B981;--green2:#34D399;--green3:rgba(16,185,129,.15);--purple:#8B5CF6;--purple3:rgba(139,92,246,.15);--text:#F1F5F9;--text2:#94A3B8;--text3:#64748B;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);--glass:rgba(255,255,255,.04);--font:'Space Grotesk',system-ui,sans-serif;--mono:'JetBrains Mono',monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden;min-height:100vh}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+nav{position:fixed;top:0;left:0;right:0;z-index:200;height:56px;background:rgba(8,11,20,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.5rem;gap:1rem}
+.nav-logo{display:flex;align-items:center;gap:.6rem;font-size:1.05rem;font-weight:700;color:#fff;white-space:nowrap}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pdot 1.4s ease-in-out infinite}
+@keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.nav-center{flex:1;text-align:center;font-size:.75rem;color:var(--text3);display:none}
+@media(min-width:700px){.nav-center{display:block}}
+.status-pill{padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700;border:1px solid;display:flex;align-items:center;gap:5px;cursor:default}
+.pill-ok{background:var(--green3);border-color:var(--green);color:var(--green2)}
+.pill-danger{background:var(--red3);border-color:var(--red);color:var(--red2)}
+.blink{animation:blinka 1s step-end infinite}
+@keyframes blinka{0%,100%{opacity:1}50%{opacity:0}}
+.hero{padding:76px 1.5rem 0;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 30%,rgba(220,38,38,.07),transparent),radial-gradient(ellipse 50% 40% at 80% 70%,rgba(0,212,255,.06),transparent);pointer-events:none}
+.hero-eye{font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;color:var(--cyan);margin-bottom:.6rem;font-weight:600}
+.hero-h1{font-size:clamp(1.7rem,4vw,3rem);font-weight:700;line-height:1.1;color:#fff;margin-bottom:.6rem}
+.hero-h1 em{color:var(--red2);font-style:normal}
+.hero-sub{font-size:.92rem;color:var(--text2);max-width:520px;margin:0 auto 1.2rem;line-height:1.7}
+.htags{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;margin-bottom:1.8rem}
+.tag{padding:3px 11px;border-radius:20px;font-size:.7rem;font-weight:600;border:1px solid}
+.tg{background:var(--green3);border-color:rgba(16,185,129,.4);color:var(--green2)}
+.tc{background:var(--cyan3);border-color:rgba(0,212,255,.3);color:var(--cyan2)}
+.ta{background:var(--amber3);border-color:rgba(245,158,11,.4);color:var(--amber2)}
+.tr{background:var(--red3);border-color:rgba(220,38,38,.4);color:var(--red2)}
+.tp{background:var(--purple3);border-color:rgba(139,92,246,.4);color:#A78BFA}
+.alert-banner{margin:0 1.5rem 1.2rem;border-radius:10px;padding:.75rem 1.1rem;display:flex;align-items:center;gap:.7rem;font-size:.83rem;font-weight:500;border:1px solid;transition:all .4s}
+.ab-clear{background:var(--green3);border-color:var(--green);color:var(--green2)}
+.ab-warn{background:var(--amber3);border-color:var(--amber);color:var(--amber2)}
+.ab-danger{background:var(--red3);border-color:var(--red);color:var(--red2);animation:flashb 1s ease-in-out infinite}
+@keyframes flashb{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.3)}50%{box-shadow:0 0 0 4px rgba(220,38,38,.1)}}
+.main{padding:0 1.5rem 3rem;max-width:1400px;margin:0 auto;display:flex;flex-direction:column;gap:1.2rem}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.2rem}
+.row13{display:grid;grid-template-columns:1fr 330px;gap:1.2rem}
+@media(max-width:1100px){.row13{grid-template-columns:1fr}}
+@media(max-width:800px){.row2,.row3{grid-template-columns:1fr}}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.ch{padding:.85rem 1.1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:.6rem}
+.ct{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);display:flex;align-items:center;gap:.4rem}
+.cbadge{font-size:.65rem;padding:2px 8px;border-radius:10px;font-weight:700;background:var(--cyan3);color:var(--cyan);border:1px solid rgba(0,212,255,.2)}
+.cb{padding:1.1rem}
+.slbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);margin-bottom:.6rem;display:flex;align-items:center;gap:.5rem}
+.slbl::after{content:'';flex:1;height:1px;background:var(--border)}
+.scrow{display:flex;flex-wrap:wrap;gap:.5rem}
+.scbtn{padding:6px 13px;border-radius:8px;border:1px solid var(--border2);background:var(--glass);color:var(--text2);font-size:.78rem;font-family:var(--font);font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px}
+.scbtn:hover{border-color:var(--cyan);color:#fff;background:var(--cyan3)}
+.scbtn.sfire{background:var(--red3);border-color:var(--red);color:var(--red2)}
+.scbtn.ssmoke{background:rgba(100,116,139,.15);border-color:#64748B;color:#94A3B8}
+.scbtn.spower{background:var(--purple3);border-color:var(--purple);color:#A78BFA}
+.scbtn.sblocked{background:var(--amber3);border-color:var(--amber);color:var(--amber2)}
+.scbtn.sclear{background:var(--green3);border-color:var(--green);color:var(--green2)}
+.screen-lbl{text-align:center;padding:.6rem;background:linear-gradient(to bottom,rgba(0,212,255,.08),transparent);border-bottom:2px solid rgba(0,212,255,.2);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);font-weight:600}
+.seats-wrap{padding:.4rem .6rem .8rem}
+.srow{display:flex;align-items:center;gap:3px;margin-bottom:3px;justify-content:center}
+.rlbl{font-size:.58rem;color:var(--text3);width:12px;text-align:right;flex-shrink:0;font-family:var(--mono)}
+.seat{width:15px;height:12px;border-radius:3px 3px 1px 1px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.05);cursor:pointer;transition:all .15s;flex-shrink:0}
+.seat:hover{border-color:rgba(255,255,255,.3);transform:scaleY(1.15)}
+.seat.occ{background:rgba(255,255,255,.17);border-color:rgba(255,255,255,.22)}
+.seat.sdanger{background:rgba(220,38,38,.6);border-color:var(--red);animation:sdang .8s ease-in-out infinite alternate}
+.seat.sroute{background:rgba(0,212,255,.45);border-color:var(--cyan);animation:srout 1s ease-in-out infinite alternate}
+.seat.ssafe{background:rgba(16,185,129,.4);border-color:var(--green)}
+.seat.ssel{background:var(--cyan);border-color:#fff;box-shadow:0 0 8px var(--cyan)}
+.seat.sgap{background:transparent;border-color:transparent;cursor:default}
+@keyframes sdang{from{background:rgba(220,38,38,.35)}to{background:rgba(220,38,38,.8)}}
+@keyframes srout{from{background:rgba(0,212,255,.25)}to{background:rgba(0,212,255,.65)}}
+.exits-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.35rem;padding:.3rem .6rem .7rem}
+.enode{padding:.35rem .5rem;border-radius:7px;border:1px solid;font-size:.68rem;font-weight:600;text-align:center;cursor:pointer;transition:all .2s}
+.eopen{background:var(--green3);border-color:var(--green);color:var(--green2)}
+.eopen:hover{background:rgba(16,185,129,.25)}
+.eblocked{background:var(--red3);border-color:var(--red);color:var(--red2)}
+.ebest{box-shadow:0 0 12px rgba(16,185,129,.4);border-width:2px}
+.escore{font-size:.6rem;font-weight:400;opacity:.8;margin-top:1px}
+.route-path{fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.rp-best{stroke:var(--cyan);stroke-width:3;filter:drop-shadow(0 0 4px var(--cyan));stroke-dasharray:10 5}
+.rp-alt{stroke:var(--amber);stroke-width:1.8;opacity:.55;stroke-dasharray:6 4}
+@keyframes dash{to{stroke-dashoffset:-30}}
+.rp-anim{animation:dash 1s linear infinite}
+.time-big{font-size:3rem;font-weight:700;font-family:var(--mono);color:var(--cyan);text-align:center;line-height:1;text-shadow:0 0 30px rgba(0,212,255,.35)}
+.tunit{font-size:.72rem;color:var(--text2);text-align:center;margin-top:.2rem}
+.tbreak{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-top:.9rem}
+.tseg{text-align:center;padding:.45rem;background:var(--glass);border-radius:7px;border:1px solid var(--border)}
+.tseg .tnum{font-size:1rem;font-weight:700;font-family:var(--mono)}
+.tseg .tnlbl{font-size:.62rem;color:var(--text2);margin-top:2px}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+.smin .val{font-size:1.5rem;font-weight:700;line-height:1;font-family:var(--mono)}
+.smin .lbl{font-size:.68rem;color:var(--text2);text-transform:uppercase;letter-spacing:.07em}
+.smin .sub{font-size:.65rem;color:var(--text3)}
+.prow{margin-bottom:.6rem}
+.plbl{display:flex;justify-content:space-between;font-size:.72rem;color:var(--text2);margin-bottom:.25rem}
+.ptrack{height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.pfill{height:100%;border-radius:3px;transition:width 1s ease}
+.ai-msg{background:var(--glass);border:1px solid var(--border);border-radius:9px;padding:.85rem 1rem;font-size:.8rem;line-height:1.7;color:var(--text2);position:relative}
+.ai-msg::before{content:'AI';position:absolute;top:-8px;left:12px;background:var(--cyan);color:#000;font-size:.58rem;font-weight:800;padding:1px 7px;border-radius:4px;letter-spacing:.07em}
+.ai-steps{margin-top:.7rem;display:flex;flex-direction:column;gap:.35rem}
+.ai-step{display:flex;align-items:flex-start;gap:.45rem;font-size:.76rem;color:var(--text2)}
+.ai-snum{background:var(--cyan3);border:1px solid rgba(0,212,255,.3);color:var(--cyan);border-radius:50%;width:17px;height:17px;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;flex-shrink:0;margin-top:1px}
+.route-cmp{display:flex;flex-direction:column;gap:.5rem}
+.ritem{border:1px solid var(--border);border-radius:9px;padding:.65rem .9rem;display:flex;align-items:center;gap:.7rem;cursor:pointer;transition:all .2s}
+.ritem:hover{border-color:var(--border2);background:var(--glass)}
+.ritem.ract{border-color:var(--cyan);background:var(--cyan3)}
+.rico{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+.rname{font-size:.8rem;font-weight:600;color:#fff;margin-bottom:1px}
+.rmeta{font-size:.7rem;color:var(--text2)}
+.rbars{display:flex;gap:2px;align-items:flex-end;height:18px}
+.rbar{width:4px;border-radius:2px;background:currentColor;opacity:.7}
+.log-list{display:flex;flex-direction:column;gap:.45rem;max-height:200px;overflow-y:auto}
+.litem{display:flex;align-items:flex-start;gap:.6rem;padding:.55rem .75rem;border-radius:8px;border:1px solid;font-size:.76rem}
+.linfo{background:var(--cyan3);border-color:rgba(0,212,255,.2);color:var(--cyan2)}
+.lwarn{background:var(--amber3);border-color:rgba(245,158,11,.25);color:var(--amber2)}
+.lcrit{background:var(--red3);border-color:rgba(220,38,38,.25);color:var(--red2)}
+.lok{background:var(--green3);border-color:rgba(16,185,129,.25);color:var(--green2)}
+.lico{font-size:.85rem;flex-shrink:0;margin-top:1px}
+.lmsg{font-weight:500;line-height:1.4}
+.ltime{font-size:.63rem;opacity:.7;font-family:var(--mono);margin-top:2px}
+.tips-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:.7rem}
+.tip{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:.9rem;transition:border-color .2s}
+.tip:hover{border-color:var(--border2)}
+.tpico{font-size:1.4rem;margin-bottom:.4rem}
+.tptitle{font-size:.8rem;font-weight:600;color:#fff;margin-bottom:.25rem}
+.tptxt{font-size:.73rem;color:var(--text2);line-height:1.6}
+#toast{position:fixed;top:66px;right:1rem;z-index:500;display:flex;flex-direction:column;gap:.45rem;max-width:300px}
+.titem{background:rgba(13,17,32,.96);border:1px solid var(--border2);border-radius:10px;padding:.7rem .9rem;font-size:.78rem;display:flex;align-items:center;gap:.55rem;box-shadow:0 8px 28px rgba(0,0,0,.45);animation:slin .3s ease;backdrop-filter:blur(20px)}
+.titem.rem{animation:slout .3s ease forwards}
+.tdanger{border-color:var(--red)}
+.twarn{border-color:var(--amber)}
+.tok{border-color:var(--green)}
+@keyframes slin{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slout{to{transform:translateX(110%);opacity:0}}
+footer{border-top:1px solid var(--border);padding:1.3rem;text-align:center;font-size:.75rem;color:var(--text3);margin-top:.5rem}
+footer span{color:var(--cyan)}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<nav>
+  <div class="nav-logo"><div class="pulse-dot"></div>CineGuard<span style="color:var(--cyan)">AI</span></div>
+  <div class="nav-center">Cinema Hall Emergency Evacuation System · Multiplex Central · Hall 3</div>
+  <div id="sysPill" class="status-pill pill-ok"><span class="blink">●</span>SYSTEM ONLINE</div>
+</nav>
+
+<div class="hero">
+  <div class="hero-eye">Smart Emergency Safety Platform · AI-Powered</div>
+  <h1 class="hero-h1">Cinema Hall <em>Emergency</em><br/>Evacuation Planner</h1>
+  <p class="hero-sub">Real-time AI evacuation route computation for Multiplex Central Hall 3 — 420 seats · 6 emergency exits · Live hazard tracking · A* pathfinding.</p>
+  <div class="htags">
+    <span class="tag tc">A* Pathfinding</span><span class="tag tr">Fire Detection</span><span class="tag ta">Crowd Density</span><span class="tag tg">Live Routing</span><span class="tag tp">Risk Analytics</span>
+  </div>
+</div>
+<div style="height:.8rem"></div>
+<div class="alert-banner ab-clear" id="abanner">
+  <span id="aico" style="font-size:1.2rem">✅</span>
+  <span id="atxt" style="flex:1">All systems normal. No active emergencies. 6 exits fully operational.</span>
+  <span id="atime" style="font-family:var(--mono);font-size:.7rem;opacity:.7">12:00:00</span>
+</div>
+
+<div class="main">
+
+<!-- ROW 1: SCENARIO + RISK -->
+<div class="row2" style="grid-template-columns:1fr 220px">
+  <div class="card">
+    <div class="ch"><div class="ct">🎬 Emergency Scenario Control</div><div class="cbadge">INTERACTIVE</div></div>
+    <div class="cb">
+      <div class="slbl">Active emergency type</div>
+      <div class="scrow">
+        <button class="scbtn sclear" onclick="setScen('clear',this)">✅ All Clear</button>
+        <button class="scbtn" onclick="setScen('fire',this)">🔥 Fire Emergency</button>
+        <button class="scbtn" onclick="setScen('smoke',this)">💨 Smoke Alert</button>
+        <button class="scbtn" onclick="setScen('power',this)">⚡ Power Failure</button>
+        <button class="scbtn" onclick="setScen('blocked',this)">🚫 Exit Blocked</button>
+      </div>
+      <div style="margin-top:.9rem">
+        <div class="slbl">Toggle exits blocked/open</div>
+        <div id="exitTogRow" class="scrow"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct">⚠️ Risk Level</div></div>
+    <div class="cb" style="text-align:center;padding:.8rem">
+      <svg viewBox="0 0 180 100" style="width:100%;max-width:170px;display:block;margin:0 auto">
+        <defs>
+          <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#10B981"/><stop offset="50%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#DC2626"/>
+          </linearGradient>
+          <filter id="gf"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <path d="M15 95 A75 75 0 0 1 165 95" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="14" stroke-linecap="round"/>
+        <path d="M15 95 A75 75 0 0 1 165 95" fill="none" stroke="url(#rg)" stroke-width="14" stroke-linecap="round" opacity=".2"/>
+        <path id="rArc" d="M15 95 A75 75 0 0 1 165 95" fill="none" stroke="url(#rg)" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 236"/>
+        <circle id="rDot" cx="15" cy="95" r="6" fill="#10B981" filter="url(#gf)"/>
+        <text id="rPct" x="90" y="76" text-anchor="middle" font-size="20" font-weight="700" fill="white" font-family="JetBrains Mono">0%</text>
+        <text id="rLbl" x="90" y="89" text-anchor="middle" font-size="7.5" fill="#64748B" font-family="Space Grotesk">NO RISK</text>
+      </svg>
+      <div id="rTag" class="tag tg" style="display:inline-block;margin-top:.2rem;font-size:.72rem">LOW RISK</div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 2: MAP + SIDEBAR -->
+<div class="row13">
+  <div class="card">
+    <div class="ch"><div class="ct">🗺 Cinema Hall Floor Map — Hall 3</div><span style="font-size:.7rem;color:var(--text3)">Click any seat</span></div>
+    <div class="cb" style="padding:.7rem">
+      <div id="cinemaMap" style="position:relative;background:#060912;border-radius:8px;overflow:hidden">
+        <div class="screen-lbl">◀️ ═══════ CINEMA SCREEN ═══════ ▶️</div>
+        <div class="seats-wrap" id="seatsWrap"></div>
+        <svg id="rsvg" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></svg>
+      </div>
+      <div class="slbl" style="margin-top:.8rem">Emergency exits — click to toggle</div>
+      <div class="exits-grid" id="exitsGrid"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.5rem;font-size:.68rem;color:var(--text2)">
+        <span>⬜ Empty</span><span style="color:rgba(255,255,255,.7)">▪ Occupied</span><span style="color:var(--red2)">▪ Danger</span><span style="color:var(--cyan2)">▪ Route</span><span style="color:var(--green2)">▪ Safe</span><span style="color:var(--cyan)">▪ Selected</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:1.2rem">
+    <div class="card">
+      <div class="ch"><div class="ct">⏱ Evacuation Time</div></div>
+      <div class="cb">
+        <div class="time-big" id="evacTime">2:34</div>
+        <div class="tunit">estimated min : sec</div>
+        <div class="tbreak">
+          <div class="tseg"><div class="tnum" id="tWalk" style="color:var(--cyan)">45s</div><div class="tnlbl">Walk time</div></div>
+          <div class="tseg"><div class="tnum" id="tCrowd" style="color:var(--amber)">+38s</div><div class="tnlbl">Crowd delay</div></div>
+          <div class="tseg"><div class="tnum" id="tTotal" style="color:var(--green)">83s</div><div class="tnlbl">Total</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ct">📊 Live Statistics</div></div>
+      <div class="cb">
+        <div class="sgrid">
+          <div class="smin"><div class="val" id="stOcc" style="color:var(--cyan)">312</div><div class="lbl">Occupancy</div><div class="sub">of 420 seats</div></div>
+          <div class="smin"><div class="val" id="stExits" style="color:var(--green)">6</div><div class="lbl">Active Exits</div><div class="sub">operational</div></div>
+          <div class="smin"><div class="val" id="stRoutes" style="color:var(--amber)">3</div><div class="lbl">Alt Routes</div><div class="sub">computed</div></div>
+          <div class="smin"><div class="val" id="stHaz" style="color:var(--red)">0</div><div class="lbl">Hazard Zones</div><div class="sub">detected</div></div>
+        </div>
+        <div style="margin-top:.9rem">
+          <div class="prow"><div class="plbl"><span>Capacity</span><span id="capP" style="font-family:var(--mono)">74%</span></div><div class="ptrack"><div class="pfill" id="capB" style="width:74%;background:var(--cyan)"></div></div></div>
+          <div class="prow"><div class="plbl"><span>Exits available</span><span id="exitP" style="font-family:var(--mono)">100%</span></div><div class="ptrack"><div class="pfill" id="exitB" style="width:100%;background:var(--green)"></div></div></div>
+          <div class="prow" style="margin:0"><div class="plbl"><span>Safety score</span><span id="safeP" style="font-family:var(--mono)">97/100</span></div><div class="ptrack"><div class="pfill" id="safeB" style="width:97%;background:var(--green)"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 3: AI + ROUTES + EXIT SCORES -->
+<div class="row3">
+  <div class="card">
+    <div class="ch"><div class="ct">🤖 AI Route Recommendation</div><div class="cbadge">LIVE</div></div>
+    <div class="cb">
+      <div class="ai-msg" id="aiMsg">All exits operational. No hazards detected. In a routine evacuation, proceed to the nearest exit in an orderly fashion.</div>
+      <div class="ai-steps" id="aiSteps"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct">🛣 Route Comparison</div></div>
+    <div class="cb"><div class="route-cmp" id="routeCmp"></div></div>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct">🚪 Exit Safety Scores</div></div>
+    <div class="cb"><div id="exitScores"></div></div>
+  </div>
+</div>
+
+<!-- ROW 4: HEATMAP + CROWD + ASSEMBLY -->
+<div class="row3">
+  <div class="card">
+    <div class="ch"><div class="ct">🌡 Danger Heatmap</div></div>
+    <div class="cb" style="padding:.8rem"><canvas id="heatC" width="380" height="190" style="width:100%;border-radius:7px;display:block"></canvas>
+      <div style="display:flex;gap:.7rem;flex-wrap:wrap;margin-top:.6rem;font-size:.7rem;color:var(--text2)">
+        <span>🟢 Safe</span><span>🟡 Caution</span><span>🔴 Danger</span><span>🟣 Critical</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct">👥 Crowd Density</div></div>
+    <div class="cb" style="padding:.8rem"><canvas id="crowdC" width="380" height="190" style="width:100%;border-radius:7px;display:block"></canvas>
+      <div style="display:flex;gap:.7rem;flex-wrap:wrap;margin-top:.6rem;font-size:.7rem;color:var(--text2)">
+        <span>🟢 Low density</span><span>🟡 Moderate</span><span>🔴 High density</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct">🏁 Assembly Points</div></div>
+    <div class="cb" style="padding:.8rem">
+      <svg viewBox="0 0 270 195" style="width:100%;background:#060912;border-radius:7px;display:block">
+        <rect x="55" y="30" width="160" height="120" rx="4" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1.5"/>
+        <text x="135" y="88" text-anchor="middle" fill="rgba(255,255,255,.1)" font-size="8" font-family="Space Grotesk">MULTIPLEX</text>
+        <text x="135" y="99" text-anchor="middle" fill="rgba(255,255,255,.1)" font-size="8" font-family="Space Grotesk">CENTRAL</text>
+        <line x1="0" y1="158" x2="270" y2="158" stroke="rgba(255,255,255,.04)" stroke-width="12"/>
+        <line x1="135" y1="0" x2="135" y2="30" stroke="rgba(255,255,255,.04)" stroke-width="10"/>
+        <line x1="55" y1="90" x2="28" y2="170" stroke="rgba(16,185,129,.25)" stroke-width="1" stroke-dasharray="4 3"/>
+        <line x1="215" y1="90" x2="242" y2="170" stroke="rgba(16,185,129,.25)" stroke-width="1" stroke-dasharray="4 3"/>
+        <line x1="135" y1="30" x2="135" y2="15" stroke="rgba(0,212,255,.25)" stroke-width="1" stroke-dasharray="4 3"/>
+        <line x1="55" y1="90" x2="28" y2="170" stroke="#10B981" stroke-width="2" stroke-dasharray="5 3"><animate attributeName="stroke-dashoffset" values="0;-16" dur=".8s" repeatCount="indefinite"/></line>
+        <circle cx="28" cy="170" r="11" fill="rgba(16,185,129,.25)" stroke="#10B981" stroke-width="1.5"/>
+        <text x="28" y="174" text-anchor="middle" fill="#10B981" font-size="7.5" font-weight="700" font-family="Space Grotesk">A</text>
+        <circle cx="242" cy="170" r="11" fill="rgba(16,185,129,.2)" stroke="#10B981" stroke-width="1.5"/>
+        <text x="242" y="174" text-anchor="middle" fill="#10B981" font-size="7.5" font-weight="700" font-family="Space Grotesk">B</text>
+        <circle cx="135" cy="14" r="11" fill="rgba(0,212,255,.15)" stroke="#00D4FF" stroke-width="1.5"/>
+        <text x="135" y="18" text-anchor="middle" fill="#00D4FF" font-size="7.5" font-weight="700" font-family="Space Grotesk">C</text>
+        <text x="28" y="188" text-anchor="middle" fill="#475569" font-size="6.5" font-family="Space Grotesk">Parking A</text>
+        <text x="242" y="188" text-anchor="middle" fill="#475569" font-size="6.5" font-family="Space Grotesk">Garden B</text>
+        <text x="135" y="8" text-anchor="middle" fill="#475569" font-size="6.5" font-family="Space Grotesk">Road C</text>
+        <text x="10" y="155" fill="rgba(16,185,129,.7)" font-size="5.5" font-family="JetBrains Mono">PRIMARY</text>
+        <text x="212" y="155" fill="rgba(16,185,129,.5)" font-size="5.5" font-family="JetBrains Mono">SECONDARY</text>
+      </svg>
+      <div style="margin-top:.5rem;font-size:.7rem;color:var(--text2);display:flex;flex-direction:column;gap:.25rem">
+        <div style="display:flex;justify-content:space-between"><span>Assembly Point A — Parking</span><span style="color:var(--green)">PRIMARY · 180m</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Assembly Point B — Garden</span><span style="color:var(--green)">SECONDARY · 240m</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Assembly Point C — Road</span><span style="color:var(--cyan)">TERTIARY · 95m</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 5: LOG + TIPS -->
+<div class="row2">
+  <div class="card">
+    <div class="ch"><div class="ct">🔔 Live Alert Log</div><div class="cbadge" id="alertCnt">0 ALERTS</div></div>
+    <div class="cb" style="padding:.8rem"><div class="log-list" id="alog"></div></div>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct">💡 Emergency Preparedness</div></div>
+    <div class="cb">
+      <div class="tips-grid">
+        <div class="tip"><div class="tpico">🚪</div><div class="tptitle">Know Your Exits</div><div class="tptxt">Locate at least two exits before the show begins. Count rows to nearest exit.</div></div>
+        <div class="tip"><div class="tpico">🧍</div><div class="tptitle">Stay Low in Smoke</div><div class="tptxt">Crawl below smoke level. Cover mouth. Move swiftly to nearest exit.</div></div>
+        <div class="tip"><div class="tpico">🚫</div><div class="tptitle">No Elevators</div><div class="tptxt">Always use stairs during fire. Elevators may trap occupants mid-floor.</div></div>
+        <div class="tip"><div class="tpico">📱</div><div class="tptitle">Call Emergency</div><div class="tptxt">Dial 101 (Fire) or 112 (Emergency). Share your exact hall location.</div></div>
+        <div class="tip"><div class="tpico">🏃</div><div class="tptitle">Stay Calm</div><div class="tptxt">Stampedes cause injuries. Walk briskly, assist others, maintain order.</div></div>
+        <div class="tip"><div class="tpico">🔦</div><div class="tptitle">Power Failure</div><div class="tptxt">Emergency LED floor strips activate in 3 sec. Follow them to exits.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 6: STATS DASHBOARD -->
+<div class="card">
+  <div class="ch"><div class="ct">📈 Evacuation Statistics Dashboard</div></div>
+  <div class="cb">
+    <div class="row3">
+      <div><div class="slbl">Exit throughput (persons/min)</div><div id="tpBars"></div></div>
+      <div><div class="slbl">Zone occupancy</div><div id="zoneBars"></div></div>
+      <div><div class="slbl">Historical avg evac times (sec)</div><div id="histChart" style="display:flex;align-items:flex-end;gap:5px;height:90px;padding-top:.8rem"></div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+<footer>CineGuard<span>AI</span> · Cinema Hall Emergency Evacuation System · Multiplex Central Hall 3 · A* Search + Constraint Satisfaction + Utility Decision Logic · <span>CAFI Project 2024–25</span> — Kartheek Reddy · Mohana Priya · G. Keerthi</footer>
+
+<script>
+const RLETTERS=['A','B','C','D','E','F','G','H','I','J','K','L','M','N'];
+const SPROW=[8,10,12,14,14,14,14,14,14,14,12,10,10,8];
+const EXITS=[
+  {id:'E1',label:'Front Left',side:'front',score:95,cap:120,time:25},
+  {id:'E2',label:'Front Right',side:'front',score:92,cap:120,time:28},
+  {id:'E3',label:'Mid Left',side:'left',score:88,cap:80,time:35},
+  {id:'E4',label:'Mid Right',side:'right',score:85,cap:80,time:38},
+  {id:'E5',label:'Rear Left',side:'rear',score:78,cap:60,time:52},
+  {id:'E6',label:'Rear Right',side:'rear',score:75,cap:60,time:55},
+];
+let S={scen:'clear',blocked:new Set(),sel:null,alertN:0};
+
+const SCENS={
+  clear:{risk:0,rlbl:'NO RISK',rtag:'tg',ac:'ab-clear',aico:'✅',atxt:'All systems normal. No active emergencies. 6 exits fully operational.',exits:6,haz:0,routes:3,safe:97,xpct:100,et:'2:34',tw:'45s',tc:'+38s',tt:'83s',
+    ai:'All exits operational. No hazards detected. Proceed to the nearest exit in an orderly fashion during evacuation.',
+    steps:['Remain calm. Locate the nearest illuminated exit sign.','Follow the cyan route markers highlighted on floor displays.','Do not use elevators. Use stairs and maintain single-file movement.','Proceed to Assembly Point A in the main parking area.']},
+  fire:{risk:82,rlbl:'HIGH RISK',rtag:'tr',ac:'ab-danger',aico:'🔥',atxt:'FIRE in front-left zone (Rows A–D). Exits E1 & E2 compromised. Evacuate via rear exits NOW!',exits:4,haz:1,routes:2,safe:34,xpct:67,et:'4:15',tw:'95s',tc:'+160s',tt:'255s',
+    ai:'CRITICAL: Fire in front-left quadrant. Exits E1 & E2 are hazardous. Rerouting all occupants via E5/E6 (Rear) and E3 (Mid-Left). Low-density path via aisle D→K→Exit E5 detected.',
+    steps:['🔥 DO NOT move toward the screen — fire is in the front zone.','↩ Reverse direction: move toward the rear of the hall.','🚪 Use Exit E5 (Rear Left) or E6 (Rear Right) as primary routes.','📞 Emergency services notified. ETA: 4 minutes. Await staff guidance.','🏁 Assemble at Point A (Parking) — away from the building.']},
+  smoke:{risk:55,rlbl:'MEDIUM RISK',rtag:'ta',ac:'ab-warn',aico:'💨',atxt:'SMOKE in front section (Rows A–F). Reduced visibility. Mid and rear exits recommended.',exits:5,haz:1,routes:3,safe:58,xpct:83,et:'3:22',tw:'68s',tc:'+134s',tt:'202s',
+    ai:'Smoke detected in front 6 rows. Visibility impaired. AI recommends Exit E3 (Mid Left) with 88/100 safety score as optimal safe route.',
+    steps:['💨 Stay low — smoke rises. Crawl if visibility below 2 meters.','🧣 Cover mouth and nose with cloth to filter smoke.','🚪 Primary route: E3 (Mid Left) — clear of smoke, score 88.','⬆ Do not stand up until you have fully exited the building.','🏁 Assemble at Point B (Garden) — upwind from the building.']},
+  power:{risk:38,rlbl:'LOW-MED RISK',rtag:'ta',ac:'ab-warn',aico:'⚡',atxt:'POWER FAILURE detected. Emergency lighting activated. All exits operational. Stay calm.',exits:6,haz:0,routes:3,safe:72,xpct:100,et:'3:45',tw:'75s',tc:'+150s',tt:'225s',
+    ai:'Power failure detected. Emergency LED floor lighting is now active. All 6 exits remain fully operational. Follow floor-level lighting strips.',
+    steps:['⚡ Remain calm. Emergency lighting activates within 3 seconds.','💡 Follow green LED strips on the floor — they lead to all exits.','📵 Use your phone screen as a light source if needed.','🚪 All 6 exits are operational. Proceed to the nearest exit.','🔦 Staff with flashlights are guiding occupants from all aisles.']},
+  blocked:{risk:45,rlbl:'MEDIUM RISK',rtag:'ta',ac:'ab-warn',aico:'🚫',atxt:'EXIT BLOCKED. One or more exits unavailable. AI has recalculated optimal routes.',exits:5,haz:0,routes:2,safe:68,xpct:83,et:'3:10',tw:'58s',tc:'+130s',tt:'188s',
+    ai:'One or more exits are blocked. AI has recalculated routes to nearest available exits. Follow yellow alternate route markers.',
+    steps:['🚫 Blocked exits shown in red. Do not attempt to use them.','↩ Follow staff directions to alternate exit routes.','🚪 Use Exit E4 (Mid Right) or E6 (Rear Right) as alternatives.','📢 PA system will broadcast updated evacuation instructions.']}
+};
+
+function buildSeats(){
+  const w=document.getElementById('seatsWrap'); w.innerHTML='';
+  RLETTERS.forEach((L,ri)=>{
+    const n=SPROW[ri];
+    const row=document.createElement('div'); row.className='srow';
+    const lbl=document.createElement('div'); lbl.className='rlbl'; lbl.textContent=L;
+    row.appendChild(lbl);
+    for(let si=0;si<n;si++){
+      if([3,7].includes(si)){const g=document.createElement('div');g.className='seat sgap';g.style.width='7px';row.appendChild(g);}
+      const s=document.createElement('div'); s.className='seat';
+      s.dataset.r=L; s.dataset.c=si+1;
+      if((L.charCodeAt(0)*31+si*17)%100<74){s.classList.add('occ');s.dataset.o=1;}
+      s.addEventListener('click',()=>selSeat(L,si+1));
+      row.appendChild(s);
+    }
+    w.appendChild(row);
+  });
+}
+
+function selSeat(R,C){
+  document.querySelectorAll('.seat.ssel').forEach(s=>s.classList.remove('ssel'));
+  document.querySelectorAll('.seat').forEach(s=>{if(s.dataset.r===R&&parseInt(s.dataset.c)===C)s.classList.add('ssel');});
+  S.sel={R,C}; drawRoutes();
+  toast(`Seat ${R}${C} selected — computing routes…`,'tok','🪑');
+}
+
+function hazardSeats(){
+  document.querySelectorAll('.seat').forEach(s=>{
+    s.classList.remove('sdanger','sroute','ssafe');
+    const ri=RLETTERS.indexOf(s.dataset.r);
+    if(S.scen==='fire'){if(ri<4&&parseInt(s.dataset.c||1)<=6)s.classList.add('sdanger'); else if(ri>=10)s.classList.add('ssafe');}
+    else if(S.scen==='smoke'){if(ri<6)s.classList.add('sdanger'); else if(ri>=10)s.classList.add('ssafe');}
+    else if(S.scen==='power'){if((s.dataset.r.charCodeAt(0)+parseInt(s.dataset.c||1))%8===0)s.classList.add('sdanger');}
+  });
+  if(S.sel) drawRoutes();
+}
+
+function buildExitToggles(){
+  const r=document.getElementById('exitTogRow'); r.innerHTML='';
+  EXITS.forEach(e=>{
+    const b=document.createElement('button');
+    const bl=S.blocked.has(e.id);
+    b.className='scbtn'+(bl?' sfire':'');
+    b.textContent=(bl?'🔒 ':'🚪 ')+e.label;
+    b.onclick=()=>togExit(e.id);
+    r.appendChild(b);
+  });
+}
+
+function togExit(id){
+  if(S.blocked.has(id))S.blocked.delete(id);else S.blocked.add(id);
+  const e=EXITS.find(x=>x.id===id),bl=S.blocked.has(id);
+  buildExitToggles(); renderExits(); renderExitScores(); updateAll();
+  addAlert(bl?'lcrit':'lok',bl?`Exit ${e.label} BLOCKED — rerouting!`:`Exit ${e.label} restored.`,bl?'🔒':'✅');
+  toast(bl?`${e.label} blocked! Recalculating…`:`${e.label} restored!`,bl?'tdanger':'tok',bl?'🔒':'✅');
+}
+
+function renderExits(){
+  const g=document.getElementById('exitsGrid'); g.innerHTML='';
+  const avail=EXITS.filter(e=>!S.blocked.has(e.id));
+  const best=avail.length?avail.reduce((a,b)=>adjScore(a)>adjScore(b)?a:b):null;
+  EXITS.forEach(e=>{
+    const bl=S.blocked.has(e.id);
+    const sc=bl?0:adjScore(e);
+    const d=document.createElement('div');
+    d.className=`enode ${bl?'eblocked':'eopen'} ${(!bl&&e===best)?'ebest':''}`;
+    d.innerHTML=`<div style="font-size:.9rem">${bl?'🔒':'🚪'}</div><div style="font-size:.67rem;font-weight:700">${e.label}</div><div class="escore">${bl?'BLOCKED':sc+'/100'}</div>`;
+    g.appendChild(d);
+  });
+}
+
+function adjScore(e){
+  let s=e.score;
+  if(S.scen==='fire'&&e.side==='front')s-=30;
+  if(S.scen==='smoke'&&e.side==='front')s-=20;
+  if(S.scen==='power')s-=8;
+  if(S.blocked.has(e.id))s=0;
+  return Math.max(0,Math.min(100,s));
+}
+
+function renderExitScores(){
+  const el=document.getElementById('exitScores'); el.innerHTML='';
+  EXITS.forEach(e=>{
+    const bl=S.blocked.has(e.id),sc=adjScore(e);
+    const col=bl?'var(--red)':sc>=80?'var(--green)':sc>=60?'var(--amber)':'var(--red)';
+    el.innerHTML+=`<div style="margin-bottom:.35rem"><div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:2px"><span style="color:${bl?'var(--red)':'var(--text2)'}">${bl?'🔒':'→'} ${e.label}</span><span style="color:${col};font-family:var(--mono);font-weight:600">${bl?'BLOCKED':sc}</span></div><div class="ptrack"><div class="pfill" style="width:${sc}%;background:${col}"></div></div></div>`;
+  });
+}
+
+function drawRoutes(){
+  const svg=document.getElementById('rsvg'); svg.innerHTML='';
+  const map=document.getElementById('cinemaMap');
+  const W=map.clientWidth||500,H=map.clientHeight||280;
+  const avail=EXITS.filter(e=>!S.blocked.has(e.id));
+  if(!avail.length)return;
+  const EP={E1:{x:W*.2,y:H*.96},E2:{x:W*.8,y:H*.96},E3:{x:.02*W,y:H*.55},E4:{x:.98*W,y:H*.55},E5:{x:W*.12,y:H*.88},E6:{x:W*.88,y:H*.88}};
+  let sx=W/2,sy=H*.42;
+  if(S.sel){
+    const ri=RLETTERS.indexOf(S.sel.R);
+    const n=SPROW[ri]||14;
+    sx=W*.1+(S.sel.C/n)*(W*.8);
+    sy=H*.1+(ri/14)*(H*.75);
+  }
+  if(S.scen==='fire'){
+    const el=document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+    el.setAttribute('cx',W*.17);el.setAttribute('cy',H*.2);el.setAttribute('rx',W*.18);el.setAttribute('ry',H*.17);
+    el.setAttribute('fill','rgba(220,38,38,.07)');el.setAttribute('stroke','rgba(220,38,38,.28)');el.setAttribute('stroke-width','1.5');el.setAttribute('stroke-dasharray','6 4');
+    svg.appendChild(el);
+    const ft=document.createElementNS('http://www.w3.org/2000/svg','text');
+    ft.setAttribute('x',W*.17);ft.setAttribute('y',H*.2);ft.setAttribute('text-anchor','middle');
+    ft.setAttribute('fill','rgba(220,38,38,.65)');ft.setAttribute('font-size','9');ft.setAttribute('font-family','Space Grotesk');
+    ft.textContent='🔥 FIRE ZONE';svg.appendChild(ft);
+  }
+  const best=avail.reduce((a,b)=>adjScore(a)>adjScore(b)?a:b);
+  const bp=EP[best.id];
+  if(bp){
+    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    const mx=(sx+bp.x)/2,my=Math.min(sy,bp.y)-35;
+    p.setAttribute('d',`M${sx},${sy} Q${mx},${my} ${bp.x},${bp.y}`);
+    p.setAttribute('class','route-path rp-best rp-anim');
+    svg.appendChild(p);
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',bp.x);c.setAttribute('cy',bp.y);c.setAttribute('r','6');c.setAttribute('fill','var(--cyan)');c.setAttribute('opacity','.85');
+    svg.appendChild(c);
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',bp.x);t.setAttribute('y',bp.y-12);t.setAttribute('text-anchor','middle');
+    t.setAttribute('fill','var(--cyan)');t.setAttribute('font-size','7.5');t.setAttribute('font-family','Space Grotesk');t.setAttribute('font-weight','600');
+    t.textContent='BEST EXIT';svg.appendChild(t);
+  }
+  avail.filter(e=>e.id!==best.id).slice(0,1).forEach(e=>{
+    const ap=EP[e.id];if(!ap)return;
+    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    const mx=(sx+ap.x)/2+(Math.random()>.5?25:-25),my=Math.min(sy,ap.y)-18;
+    p.setAttribute('d',`M${sx},${sy} Q${mx},${my} ${ap.x},${ap.y}`);
+    p.setAttribute('class','route-path rp-alt rp-anim');svg.appendChild(p);
+  });
+  const sd=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  sd.setAttribute('cx',sx);sd.setAttribute('cy',sy);sd.setAttribute('r','5');sd.setAttribute('fill','#fff');sd.setAttribute('opacity','.85');
+  svg.appendChild(sd);
+}
+
+function renderRouteCmp(){
+  const avail=EXITS.filter(e=>!S.blocked.has(e.id));
+  const best=avail.length?avail.reduce((a,b)=>adjScore(a)>adjScore(b)?a:b,EXITS[0]):null;
+  const fastest=avail.length?avail.reduce((a,b)=>a.time<b.time?a:b,EXITS[0]):null;
+  const routes=[
+    {name:'Shortest Path',ico:'⚡',bg:'rgba(0,212,255,.15)',col:'var(--cyan)',exit:avail[0]?.label||'N/A',time:avail[0]?.time||'-',score:avail[0]?adjScore(avail[0]):0,bars:[5,7,4,8,6,3]},
+    {name:'Safest Path',ico:'🛡',bg:'rgba(16,185,129,.15)',col:'var(--green)',exit:best?.label||'N/A',time:best?.time||'-',score:best?adjScore(best):0,bars:[3,5,8,9,7,6]},
+    {name:'Fastest Path',ico:'🏃',bg:'rgba(245,158,11,.15)',col:'var(--amber)',exit:fastest?.label||'N/A',time:fastest?.time||'-',score:avail.length?70:0,bars:[8,9,7,6,5,4]},
+  ];
+  document.getElementById('routeCmp').innerHTML=routes.map((r,i)=>`<div class="ritem${i===0?' ract':''}" onclick="this.parentNode.querySelectorAll('.ritem').forEach(x=>x.classList.remove('ract'));this.classList.add('ract')">
+    <div class="rico" style="background:${r.bg};color:${r.col}">${r.ico}</div>
+    <div style="flex:1"><div class="rname">${r.name}</div><div class="rmeta" style="color:${r.col}">→ ${r.exit} · ~${r.time}s · ${r.score}/100</div></div>
+    <div class="rbars" style="color:${r.col}">${r.bars.map(h=>`<div class="rbar" style="height:${h*2}px"></div>`).join('')}</div>
+  </div>`).join('');
+}
+
+function setRisk(p,lbl){
+  const arc=document.getElementById('rArc'),dot=document.getElementById('rDot'),pctE=document.getElementById('rPct'),lblE=document.getElementById('rLbl'),tag=document.getElementById('rTag');
+  const f=(p/100)*236;
+  arc.setAttribute('stroke-dasharray',f+' 236');
+  const col=p<30?'#10B981':p<60?'#F59E0B':'#DC2626';
+  arc.setAttribute('stroke',col);pctE.textContent=p+'%';pctE.setAttribute('fill',col);lblE.textContent=lbl;
+  const a=Math.PI+(p/100)*Math.PI,cx=90,cy=95,r=75;
+  dot.setAttribute('cx',cx+r*Math.cos(a));dot.setAttribute('cy',cy+r*Math.sin(a));dot.setAttribute('fill',col);
+  tag.className='tag '+(p<30?'tg':p<60?'ta':'tr');
+  tag.textContent=p<30?'LOW RISK':p<60?'MEDIUM RISK':'HIGH RISK';
+}
+
+function setScen(type,btn){
+  S.scen=type;
+  document.querySelectorAll('.scbtn').forEach(b=>{b.className='scbtn';});
+  btn.classList.add('s'+type);
+  const d=SCENS[type];
+  setRisk(d.risk,d.rlbl);
+  const b=document.getElementById('abanner');
+  b.className='alert-banner '+d.ac;
+  document.getElementById('aico').textContent=d.aico;
+  document.getElementById('atxt').textContent=d.atxt;
+  document.getElementById('stExits').textContent=d.exits;
+  document.getElementById('stHaz').textContent=d.haz;
+  document.getElementById('stRoutes').textContent=d.routes;
+  document.getElementById('safeP').textContent=d.safe+'/100';
+  document.getElementById('safeB').style.width=d.safe+'%';
+  document.getElementById('safeB').style.background=d.safe>80?'var(--green)':d.safe>50?'var(--amber)':'var(--red)';
+  document.getElementById('exitP').textContent=d.xpct+'%';
+  document.getElementById('exitB').style.width=d.xpct+'%';
+  document.getElementById('exitB').style.background=d.xpct>80?'var(--green)':d.xpct>50?'var(--amber)':'var(--red)';
+  document.getElementById('evacTime').textContent=d.et;
+  document.getElementById('tWalk').textContent=d.tw;
+  document.getElementById('tCrowd').textContent=d.tc;
+  document.getElementById('tTotal').textContent=d.tt;
+  document.getElementById('aiMsg').textContent=d.ai;
+  document.getElementById('aiSteps').innerHTML=d.steps.map((s,i)=>`<div class="ai-step"><div class="ai-snum">${i+1}</div><div>${s}</div></div>`).join('');
+  const sp=document.getElementById('sysPill');
+  if(type!=='clear'){sp.className='status-pill pill-danger';sp.innerHTML='<span class="blink">●</span>EMERGENCY';}
+  else{sp.className='status-pill pill-ok';sp.innerHTML='<span class="blink">●</span>SYSTEM ONLINE';}
+  if(type==='fire'){S.blocked.add('E1');S.blocked.add('E2');}
+  else if(type==='clear')S.blocked.clear();
+  hazardSeats();renderExits();renderExitScores();drawRoutes();buildExitToggles();renderRouteCmp();renderTp();drawHeat();drawCrowd();
+  addAlert(type==='clear'?'lok':type==='fire'?'lcrit':'lwarn',d.atxt,d.aico);
+  if(type!=='clear')toast(d.atxt.slice(0,55)+'…',type==='fire'?'tdanger':'twarn',d.aico);
+}
+
+function drawHeat(){
+  const c=document.getElementById('heatC'),ctx=c.getContext('2d'),W=c.width,H=c.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle='#060912';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(255,255,255,.03)';ctx.lineWidth=.8;
+  for(let i=0;i<=7;i++){ctx.beginPath();ctx.moveTo(i*W/7,0);ctx.lineTo(i*W/7,H);ctx.stroke();}
+  for(let i=0;i<=4;i++){ctx.beginPath();ctx.moveTo(0,i*H/4);ctx.lineTo(W,i*H/4);ctx.stroke();}
+  const pts=[];
+  if(S.scen==='fire'){pts.push({x:.15*W,y:.18*H,r:75,t:'fire',i:.9},{x:.24*W,y:.32*H,r:55,t:'fire',i:.65},{x:.08*W,y:.52*H,r:40,t:'warn',i:.45});}
+  else if(S.scen==='smoke'){pts.push({x:.5*W,y:.15*H,r:115,t:'smoke',i:.6},{x:.28*W,y:.28*H,r:70,t:'smoke',i:.5});}
+  else if(S.scen==='power'){pts.push({x:.65*W,y:.45*H,r:38,t:'warn',i:.3},{x:.3*W,y:.62*H,r:38,t:'warn',i:.28});}
+  pts.push({x:.52*W,y:.55*H,r:48,t:'crowd',i:.28},{x:.72*W,y:.68*H,r:42,t:'crowd',i:.32},{x:.3*W,y:.72*H,r:38,t:'crowd',i:.22});
+  pts.forEach(p=>{
+    const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);
+    const c1s={fire:`rgba(139,0,0,${p.i})`,smoke:`rgba(100,116,139,${p.i})`,warn:`rgba(245,158,11,${p.i})`,crowd:`rgba(245,158,11,${p.i})`}[p.t];
+    const c2s={fire:'rgba(220,38,38,0)',smoke:'rgba(100,116,139,0)',warn:'rgba(245,158,11,0)',crowd:'rgba(245,158,11,0)'}[p.t];
+    g.addColorStop(0,c1s);g.addColorStop(1,c2s);
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+  });
+  ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=1.5;ctx.strokeRect(W*.05,H*.05,W*.9,H*.88);
+  ctx.fillStyle='rgba(0,212,255,.06)';ctx.fillRect(W*.07,H*.06,W*.86,H*.05);
+  ctx.strokeStyle='rgba(0,212,255,.18)';ctx.strokeRect(W*.07,H*.06,W*.86,H*.05);
+  ctx.fillStyle='rgba(0,212,255,.35)';ctx.font='7px Space Grotesk';ctx.textAlign='center';ctx.fillText('SCREEN',W/2,H*.1);
+  if(S.scen==='fire'){ctx.fillStyle='rgba(255,100,50,.7)';ctx.font='bold 8px Space Grotesk';ctx.fillText('🔥 FIRE ZONE',W*.15,H*.28);}
+}
+
+function drawCrowd(){
+  const c=document.getElementById('crowdC'),ctx=c.getContext('2d'),W=c.width,H=c.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle='#060912';ctx.fillRect(0,0,W,H);
+  RLETTERS.forEach((L,ri)=>{
+    const n=SPROW[ri];
+    for(let si=0;si<n;si++){
+      const x=W*.08+(si/14)*(W*.84),y=H*.1+(ri/14)*(H*.82);
+      const h=(L.charCodeAt(0)*31+si*17)%100,occ=h<74;
+      let col='rgba(255,255,255,.04)';
+      if(occ){
+        const dh=(L.charCodeAt(0)+si)%10;
+        col=dh<3?'rgba(220,38,38,.75)':dh<6?'rgba(245,158,11,.65)':'rgba(16,185,129,.55)';
+      }
+      if(S.scen==='fire'&&ri<4&&si<6)col='rgba(220,38,38,.9)';
+      ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,2.8,0,Math.PI*2);ctx.fill();
+    }
+  });
+  ctx.fillStyle='rgba(0,212,255,.07)';ctx.fillRect(W*.07,H*.03,W*.86,H*.05);
+  ctx.strokeStyle='rgba(0,212,255,.18)';ctx.lineWidth=1;ctx.strokeRect(W*.07,H*.03,W*.86,H*.05);
+  ctx.fillStyle='rgba(0,212,255,.4)';ctx.font='6.5px Space Grotesk';ctx.textAlign='center';ctx.fillText('SCREEN',W/2,H*.07);
+}
+
+function renderTp(){
+  const el=document.getElementById('tpBars');
+  el.innerHTML=EXITS.map(e=>{
+    const bl=S.blocked.has(e.id);
+    const tp=bl?0:Math.round(e.cap*(S.scen==='fire'&&e.side==='front'?.15:1));
+    const p=Math.min(100,(tp/120)*100);
+    const col=bl?'var(--red)':p>70?'var(--green)':p>40?'var(--amber)':'var(--red)';
+    return `<div class="prow" style="margin-bottom:.3rem"><div class="plbl"><span style="font-size:.7rem;color:${bl?'var(--red)':'var(--text2)'}">${bl?'🔒 ':''}${e.label}</span><span style="color:${col};font-family:var(--mono)">${tp}/min</span></div><div class="ptrack"><div class="pfill" style="width:${p}%;background:${col}"></div></div></div>`;
+  }).join('');
+  document.getElementById('zoneBars').innerHTML=[
+    {n:'Front Zone (A–D)',o:98},{n:'Mid Zone (E–H)',o:72},{n:'Rear Zone (I–N)',o:55}
+  ].map(z=>{const col=z.o>85?'var(--red)':z.o>65?'var(--amber)':'var(--green)';return`<div class="prow" style="margin-bottom:.3rem"><div class="plbl"><span style="font-size:.7rem;color:var(--text2)">${z.n}</span><span style="color:${col};font-family:var(--mono)">${z.o}%</span></div><div class="ptrack"><div class="pfill" style="width:${z.o}%;background:${col}"></div></div></div>`;}).join('');
+  const hc=document.getElementById('histChart');
+  const times=[180,210,155,245,190,220,165],days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],mx=Math.max(...times);
+  hc.innerHTML=times.map((t,i)=>{const h=Math.round((t/mx)*72);return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="font-size:.58rem;color:var(--text3);font-family:var(--mono)">${t}</div><div style="height:${h}px;width:100%;border-radius:3px 3px 0 0;background:${i===new Date().getDay()?'var(--cyan)':'rgba(255,255,255,.1)'};transition:height .5s"></div><div style="font-size:.58rem;color:var(--text3)">${days[i]}</div></div>`;}).join('');
+}
+
+function addAlert(cls,msg,ico){
+  const log=document.getElementById('alog');
+  const now=new Date().toTimeString().slice(0,8);
+  const d=document.createElement('div');d.className=`litem ${cls}`;
+  d.innerHTML=`<div class="lico">${ico}</div><div><div class="lmsg">${msg}</div><div class="ltime">${now}</div></div>`;
+  log.insertBefore(d,log.firstChild);
+  while(log.children.length>18)log.removeChild(log.lastChild);
+  S.alertN++;document.getElementById('alertCnt').textContent=S.alertN+' ALERTS';
+}
+
+function toast(msg,cls='',ico='🔔'){
+  const box=document.getElementById('toast');
+  const d=document.createElement('div');d.className=`titem ${cls}`;
+  d.innerHTML=`<span style="font-size:1rem">${ico}</span><span style="flex:1;line-height:1.4">${d.textContent||msg}</span>`;
+  d.querySelector('span:last-child').textContent=msg;
+  box.appendChild(d);
+  setTimeout(()=>{d.classList.add('rem');setTimeout(()=>d.remove(),300);},3200);
+}
+
+function updateAll(){renderExits();renderExitScores();renderRouteCmp();renderTp();hazardSeats();drawRoutes();drawHeat();drawCrowd();}
+
+function initSteps(){
+  const d=SCENS.clear;
+  document.getElementById('aiMsg').textContent=d.ai;
+  document.getElementById('aiSteps').innerHTML=d.steps.map((s,i)=>`<div class="ai-step"><div class="ai-snum">${i+1}</div><div>${s}</div></div>`).join('');
+}
+
+setInterval(()=>{const n=new Date().toTimeString().slice(0,8);document.getElementById('atime').textContent=n;},1000);
+
+window.addEventListener('load',()=>{
+  buildSeats();buildExitToggles();renderExits();renderExitScores();renderRouteCmp();renderTp();drawHeat();drawCrowd();setRisk(0,'NO RISK');initSteps();
+  addAlert('lok','System initialized. All sensors online.','✅');
+  addAlert('linfo','Crowd density sensors calibrated. 312 occupants detected.','ℹ️');
+  addAlert('lok','All 6 emergency exits verified operational.','🚪');
+  setTimeout(()=>{selSeat('G',7);toast('Welcome to CineGuard AI. Click any seat or choose an emergency scenario.','tok','🎬');},700);
+});
+window.addEventListener('resize',()=>{drawHeat();drawCrowd();drawRoutes();});
+</script>
+</body>
+</html>
